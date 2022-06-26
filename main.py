@@ -141,13 +141,14 @@ def find_minimum(function_name):
     func_DF.index = ["AVG", "SD"]
 
     display(func_DF)
-
     for id_trial in range(1, N_TRIALS + 1):
+
         problem = {
             "fit_func": obj_function,
-            "lb": [-100]*d,
-            "ub": [100]*d,
+            "lb": [-100] * d,
+            "ub": [100] * d,
             "minmax": "min",
+            "log_to": "console",
             "verbose": False,
         }
 
@@ -156,8 +157,8 @@ def find_minimum(function_name):
         HCmodel = BaseHC(problem, epoch=200, name=model_name[2], fit_name=function_name)
         PSOmodel = BasePSO(problem, epoch=200, name=model_name[3], fit_name=function_name)
         EHOmodel = BaseEHO(problem, epoch=200, name=model_name[4], fit_name=function_name)
-        WOAmodel = BaseWOA(problem, epoch=200,  name=model_name[5], fit_name=function_name)
-        DOmodel = BaseDO(problem, epoch=200,  name=model_name[6], fit_name=function_name)
+        WOAmodel = BaseWOA(problem, epoch=200, name=model_name[5], fit_name=function_name)
+        DOmodel = BaseDO(problem, epoch=200, name=model_name[6], fit_name=function_name)
 
         GWObest_solution, GWObest_fitness = GWOmodel.solve()
         print(GWObest_fitness)
@@ -182,24 +183,39 @@ def find_minimum(function_name):
         DO_lst.append(DObest_fitness)
 
     print(f"{function_name}:")
+    print("GWO")
+    print(np.average((np.array(GWO_lst))))
+    print(np.std((np.array(GWO_lst))))
     func_DF.at["AVG", "GWO"] = np.average((np.array(GWO_lst)))
     func_DF.at["SD", "GWO"] = np.std((np.array(GWO_lst)))
-    # print("ASO:")
+    print("ASO:")
+    print(np.average((np.array(ASO_lst))))
+    print(np.std((np.array(ASO_lst))))
     func_DF.at["AVG", "ASO"] = np.average((np.array(ASO_lst)))
     func_DF.at["SD", "ASO"] = np.std((np.array(ASO_lst)))
-    # print("HC:")
+    print("HC:")
+    print(np.average((np.array(HC_lst))))
+    print(np.std((np.array(HC_lst))))
     func_DF.at["AVG", "HC"] = np.average((np.array(HC_lst)))
     func_DF.at["SD", "HC"] = np.std((np.array(HC_lst)))
-    # print("PSO:")
+    print("PSO:")
+    print(np.average((np.array(PSO_lst))))
+    print(np.std((np.array(PSO_lst))))
     func_DF.at["AVG", "PSO"] = np.average((np.array(PSO_lst)))
     func_DF.at["SD", "PSO"] = np.std((np.array(PSO_lst)))
-    # print("EHO:")
+    print("EHO:")
+    print(np.average((np.array(EHO_lst))))
+    print(np.std((np.array(EHO_lst))))
     func_DF.at["AVG", "EHO"] = np.average((np.array(EHO_lst)))
     func_DF.at["SD", "EHO"] = np.std((np.array(EHO_lst)))
-    # print("WOA:")
+    print("WOA:")
+    print(np.average((np.array(WOA_lst))))
+    print(np.std((np.array(WOA_lst))))
     func_DF.at["AVG", "WOA"] = np.average((np.array(WOA_lst)))
     func_DF.at["SD", "WOA"] = np.std((np.array(WOA_lst)))
-    # print("DO:")
+    print("DO:")
+    print(np.average((np.array(DO_lst))))
+    print(np.std((np.array(DO_lst))))
     func_DF.at["AVG", "DO"] = np.average((np.array(DO_lst)))
     func_DF.at["SD", "DO"] = np.std((np.array(DO_lst)))
 
@@ -222,6 +238,8 @@ if __name__ == '__main__':
     best_fit_full = {}
     # best_sol_full = {}
     best_fit_columns = []
+    # for i in func_names:
+    #     find_minimum(i)
     with parallel.ProcessPoolExecutor() as executor:
         results = executor.map(find_minimum, func_names)
     """
