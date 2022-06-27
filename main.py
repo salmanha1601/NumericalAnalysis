@@ -1,3 +1,4 @@
+import random
 from os import getcwd, path, makedirs
 
 import numpy as np
@@ -11,121 +12,246 @@ from mealpy.swarm_based.PSO import BasePSO
 from mealpy.swarm_based.EHO import BaseEHO
 from mealpy.swarm_based.WOA import BaseWOA
 from mealpy.swarm_based.DO import BaseDO
-from mealpy.utils.visualize import export_convergence_chart
-from pandas import DataFrame
 from IPython.display import display
 import concurrent.futures as parallel
-import time
+
+d = 40
 
 
-def obj_function(x):
-    def F27(x):
-        res = 0
+def F27(x):
+    res = 0
+    res1 = 0
+    for i in range(len(x)):
+        res += x[i]
+        res1 += pow(x[i], 2)
+    return 1 - math.cos(2 * math.pi * res) + 0.1 * res1
+
+
+def F24(x):
+    res = 0
+    for i in range(len(x)):
+        res += abs(x[i] * math.sin(x[i]) + 0.1 * x[i])
+    return res
+
+
+def F15(x):
+    res = 0
+    for i in range(len(x)):
+        res += (pow(x[i], 2) - 10 * math.cos(2 * math.pi * x[i]))
+    return 10 * len(x) + res
+
+
+def F14(x):
+    res = 0
+    res1 = 0
+    for i in range(len(x)):
+        res += pow(x[i] - 1, 2)
+    for i in range(1, len(x)):
+        res1 += x[i] * x[i - 1]
+    return res - res1
+
+
+def F13(x):
+    res = 0
+    res1 = 1
+    for i in range(len(x)):
+        res += (pow(x[i], 2) / 4000)
+        res1 *= (math.cos(x[i] / math.sqrt(i + 1))) + 1
+    return res - res1
+
+
+def F12(x):
+    res = 0
+    for i in range(len(x)):
+        res += pow(abs(x[i] + 0.5), 2)
+    return res
+
+
+def F11(x):
+    res = 0
+    res1 = 1
+    for i in range(len(x)):
+        res += abs(x[i])
+        res1 *= abs(x[i])
+    return res + res1
+
+
+def F6(x):
+    res = 0
+    res1 = 0
+    for i in range(len(x)):
+        for j in range(i):
+            res1 += x[i]
+        res += pow(res1, 2)
         res1 = 0
-        for i in range(len(x)):
-            res += x[i]
-            res1 += pow(x[i], 2)
-        return 1 - math.cos(2 * math.pi * res) + 0.1 * res1
+    return res
 
-    def F24(x):
-        res = 0
-        for i in range(len(x)):
-            res += abs(x[i] * math.sin(x[i]) + 0.1 * x[i])
-        return res
 
-    def F15(x):
-        res = 0
-        for i in range(len(x)):
-            res += (pow(x[i], 2) - 10 * math.cos(2 * math.pi * x[i]))
-        return 10 * len(x) + res
+def F3(x):
+    res = 0
+    for i in range(len(x)):
+        for j in range(i):
+            res += pow(x[i], 2)
+    return res
 
-    def F14(x):
-        res = 0
-        res1 = 0
-        for i in range(len(x)):
-            res += pow(x[i] - 1, 2)
-        for i in range(1, len(x)):
-            res1 += x[i] * x[i - 1]
-        return res - res1
 
-    def F13(x):
-        res = 0
-        res1 = 1
-        for i in range(len(x)):
-            res += (pow(x[i], 2) / 4000)
-            res1 *= (math.cos(x[i] / math.sqrt(i + 1))) + 1
-        return res - res1
+def F2(x):
+    res = 0
+    for i in range(len(x)):
+        res += pow(abs(x[i]), i + 2)
+    return res
 
-    def F12(x):
-        res = 0
-        for i in range(len(x)):
-            res += pow(abs(x[i] + 0.5), 2)
-        return res
 
-    def F11(x):
-        res = 0
-        res1 = 1
-        for i in range(len(x)):
-            res += abs(x[i])
-            res1 *= abs(x[i])
-        return res + res1
+def F1(x):
+    return sum(100.0 * (x[:-1] ** 2.0 - x[1:]) ** 2.0 + (1 - x[:-1]) ** 2.0)
 
-    def F6(x):
-        res = 0
-        res1 = 0
-        for i in range(len(x)):
-            for j in range(i):
-                res1 += x[i]
-            res += pow(res1, 2)
-            res1 = 0
-        return res
 
-    def F3(x):
-        res = 0
-        for i in range(len(x)):
-            for j in range(i):
-                res += pow(x[i], 2)
-        return res
+def generate_position(lb=None, ub=None):
+    return np.random.uniform(lb, ub, d)
 
-    def F2(x):
-        res = 0
-        for i in range(len(x)):
-            res += pow(abs(x[i]), i + 2)
-        return res
 
-    def F1(x):
-        return sum(100.0 * (x[:-1] ** 2.0 - x[1:]) ** 2.0 + (1 - x[:-1]) ** 2.0)
+def ranfRange(lb, ub):
+    return random.randint(lb, ub)
 
-    return [F1(x), F2(x), F3(x), F6(x), F11(x), F12(x), F13(x), F14(x), F15(x), F24(x), F27(x)]
 
+p1 = {
+    "name": "F1",
+    "fit_func": F1,
+    "lb": -100,
+    "ub": 100,
+    "minmax": "min",
+    "verbose": False,
+    "n_dims": d,
+    "generating_positions": generate_position,
+}
+
+p2 = {
+    "name": "F2",
+    "fit_func": F2,
+    "lb": -100,
+    "ub": 100,
+    "minmax": "min",
+    "verbose": False,
+    "n_dims": d,
+    "generating_positions": generate_position,
+}
+
+p3 = {
+    "name": "F3",
+    "fit_func": F3,
+    "lb": -65,
+    "ub": 65,
+    "minmax": "min",
+    "verbose": False,
+    "n_dims": d,
+    "generating_positions": generate_position,
+}
+
+p6 = {
+    "name": "F6",
+    "fit_func": F6,
+    "lb": -100,
+    "ub": 100,
+    "minmax": "min",
+    "verbose": False,
+    "n_dims": d,
+    "generating_positions": generate_position,
+}
+
+p11 = {
+    "name": "F11",
+    "fit_func": F11,
+    "lb": -10,
+    "ub": 10,
+    "minmax": "min",
+    "verbose": False,
+    "n_dims": d,
+    "generating_positions": generate_position,
+}
+
+p12 = {
+    "name": "F12",
+    "fit_func": F12,
+    "lb": -100,
+    "ub": 100,
+    "minmax": "min",
+    "verbose": False,
+    "n_dims": d,
+    "generating_positions": generate_position,
+}
+
+p13 = {
+    "name": "F13",
+    "fit_func": F13,
+    "lb": -600,
+    "ub": 600,
+    "minmax": "min",
+    "verbose": False,
+    "n_dims": d,
+    "generating_positions": generate_position,
+}
+
+p14 = {
+    "name": "F14",
+    "fit_func": F14,
+    "lb": -1 * pow(d, 2),
+    "ub": pow(d, 2),
+    "minmax": "min",
+    "verbose": False,
+    "n_dims": d,
+    "generating_positions": generate_position,
+}
+
+p15 = {
+    "name": "F15",
+    "fit_func": F15,
+    "lb": -5.12,
+    "ub": 5.12,
+    "minmax": "min",
+    "verbose": False,
+    "n_dims": d,
+    "generating_positions": generate_position,
+}
+
+p24 = {
+    "name": "F24",
+    "fit_func": F24,
+    "lb": -10,
+    "ub": 10,
+    "minmax": "min",
+    "verbose": False,
+    "n_dims": d,
+    "generating_positions": generate_position,
+}
+
+p27 = {
+    "name": "F27",
+    "fit_func": F27,
+    "lb": -100,
+    "ub": 100,
+    "minmax": "min",
+    "verbose": False,
+    "n_dims": d,
+    "generating_positions": generate_position,
+}
+
+problems = [p1, p2, p3, p6, p11, p12, p13, p14, p15, p24, p27]
 
 model_name = ["GWO", "ASO", "HC", "PSO", "EHO", "WOA", "DO"]
 N_TRIALS = 30
 func_names = ["F1", "F2", "F3", "F6", "F11", "F12", "F13", "F14", "F15", "F24", "F27"]
-d = 20
-PATH_ERROR = "history/error/" + model_name[0] + "/"
-PATH_BEST_FIT = "history/best_fit/"
 SOL_PATH = "history/functions/"
 
-check_dir1 = f"{getcwd()}/{PATH_ERROR}"
-check_dir2 = f"{getcwd()}/{PATH_BEST_FIT}"
 check_dir3 = f"{getcwd()}/{SOL_PATH}"
 
-if not path.exists(check_dir1): makedirs(check_dir1)
-if not path.exists(check_dir2): makedirs(check_dir2)
 if not path.exists(check_dir3): makedirs(check_dir3)
 
 
-def find_minimum(function_name):
+def find_minimum(p):
     """
     We can run multiple functions at the same time.
-    Each core (CPU) will handle a function, each function will run N_TRIALS times
+    Each core (CPU) will handle a prolblem, each problem will run N_TRIALS times
     """
-    print(f"Start running: {function_name}")
-    error_full = {}
-    error_columns = []
-    best_fit_list = []
-    best_solution_list = []
 
     GWO_lst = []
     HC_lst = []
@@ -142,47 +268,29 @@ def find_minimum(function_name):
 
     display(func_DF)
     for id_trial in range(1, N_TRIALS + 1):
-
-        problem = {
-            "fit_func": obj_function,
-            "lb": [-100] * d,
-            "ub": [100] * d,
-            "minmax": "min",
-            "log_to": "console",
-            "verbose": False,
-        }
-
-        GWOmodel = BaseGWO(problem, epoch=200, name=model_name[0], fit_name=function_name)
-        ASOmodel = BaseASO(problem, epoch=200, name=model_name[1], fit_name=function_name)
-        HCmodel = BaseHC(problem, epoch=200, name=model_name[2], fit_name=function_name)
-        PSOmodel = BasePSO(problem, epoch=200, name=model_name[3], fit_name=function_name)
-        EHOmodel = BaseEHO(problem, epoch=200, name=model_name[4], fit_name=function_name)
-        WOAmodel = BaseWOA(problem, epoch=200, name=model_name[5], fit_name=function_name)
-        DOmodel = BaseDO(problem, epoch=200, name=model_name[6], fit_name=function_name)
+        GWOmodel = BaseGWO(p, epoch=200, name=model_name[0], neighbour_size=50)
+        ASOmodel = BaseASO(p, epoch=200, name=model_name[1], neighbour_size=50)
+        HCmodel = BaseHC(p, epoch=200, name=model_name[2], neighbour_size=25)
+        PSOmodel = BasePSO(p, epoch=200, name=model_name[3], neighbour_size=50)
+        EHOmodel = BaseEHO(p, epoch=200, name=model_name[4], neighbour_size=50)
+        WOAmodel = BaseWOA(p, epoch=200, name=model_name[5], neighbour_size=50)
+        DOmodel = BaseDO(p, epoch=200, name=model_name[6], neighbour_size=50)
 
         GWObest_solution, GWObest_fitness = GWOmodel.solve()
-        print(GWObest_fitness)
         GWO_lst.append(GWObest_fitness)
         ASObest_solution, ASObest_fitness = ASOmodel.solve()
-        print(ASObest_fitness)
         ASO_lst.append(ASObest_fitness)
         HCbest_solution, HCbest_fitness = HCmodel.solve()
-        print(HCbest_fitness)
         HC_lst.append(HCbest_fitness)
         PSObest_solution, PSObest_fitness = PSOmodel.solve()
-        print(PSObest_fitness)
         PSO_lst.append(PSObest_fitness)
         EHObest_solution, EHObest_fitness = EHOmodel.solve()
-        print(EHObest_fitness)
         EHO_lst.append(EHObest_fitness)
         WOAbest_solution, WOAbest_fitness = WOAmodel.solve()
-        print(WOAbest_fitness)
         WOA_lst.append(WOAbest_fitness)
         DObest_solution, DObest_fitness = DOmodel.solve()
-        print(DObest_fitness)
         DO_lst.append(DObest_fitness)
 
-    print(f"{function_name}:")
     print("GWO")
     print(np.average((np.array(GWO_lst))))
     print(np.std((np.array(GWO_lst))))
@@ -220,36 +328,12 @@ def find_minimum(function_name):
     func_DF.at["SD", "DO"] = np.std((np.array(DO_lst)))
 
     display(func_DF)
-    func_DF.to_csv(f"{SOL_PATH}/{function_name}_20D.csv", header=True, index=False)
+    func_DF.to_csv(f"{SOL_PATH}/{p.get('name')}_40D.csv", header=True, index=False)
 
-    print(f"Finish function: {function_name}")
-
-    """"
-    return {
-        "func_name": function_name,
-        "best_fit_list": best_fit_list,
-        "best_solution_list": best_solution_list,
-        "model_name": model_name[0]
-    }
-    """
+    print(f"Finish function: {str(p.get('name'))}")
 
 
 if __name__ == '__main__':
-    best_fit_full = {}
-    # best_sol_full = {}
-    best_fit_columns = []
-    # for i in func_names:
-    #     find_minimum(i)
     with parallel.ProcessPoolExecutor() as executor:
-        results = executor.map(find_minimum, func_names)
-    """
-    for result in results:
-        best_fit_full[result["func_name"]] = result["best_fit_list"]
-        # best_sol_full[result["func_name"]] = result["best_solution_list"]
-        best_fit_columns.append(result["func_name"])
+        results = executor.map(find_minimum, problems)
 
-    df = DataFrame(best_fit_full, columns=best_fit_columns)
-    df2 = DataFrame(best_fit_full)
-    df.to_csv(f"{PATH_BEST_FIT}/{len([-100] * d)}D_{model_name[0]}_best_fit.csv", header=True, index=False)
-    # df2.to_csv(f"{PATH_BEST_SOL}/{len([-100] * 5)}D_{model_name[0]}_best_sol.csv", header=True, index=False)
-    """
