@@ -249,7 +249,7 @@ if not path.exists(check_dir3): makedirs(check_dir3)
 
 def find_minimum(p):
     """
-    We can run multiple functions at the same time.
+    We can run multiple problems at the same time.
     Each core (CPU) will handle a prolblem, each problem will run N_TRIALS times
     """
 
